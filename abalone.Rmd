@@ -1,0 +1,94 @@
+---
+title: "Abalone"
+author: "Kevin"
+date: "July 29, 2018"
+output: html_document
+---
+#Determining whether a trend exists for abalone with regards to age
+
+##Introduction( from wikipedia):
+Abalone are marine snails. Their taxonomy puts them in the family Haliotidae which contains only one genus, Haliotis, which once contained six subgenera. These subgenera have become alternate representations of Haliotis.[4] The number of species recognized worldwide ranges between 30[6] and 130[7] with over 230 species-level taxa described. The most comprehensive treatment of the family considers 56 species valid, with 18 additional subspecies.[8]
+
+The shells of abalones have a low, open spiral structure, and are characterized by several open respiratory pores in a row near the shell's outer edge. The thick inner layer of the shell is composed of nacre (mother-of-pearl), which in many species is highly iridescent, giving rise to a range of strong, changeable colors, which make the shells attractive to humans as decorative objects, jewelry, and as a source of colorful mother-of-pearl.
+
+The flesh of abalones is widely considered to be a desirable food, and is consumed raw or cooked by a variety of cultures.
+
+The dataset that I'm using is from UCI machine learning dataset collection https://archive.ics.uci.edu/ml/datasets/abalone 
+
+The variables in this dataset include:
+1. Sex: Male, female, or infant
+2. Length(in mm): longest shell measurement
+3. Diameter(in mm): perpendicular to length
+4. Height(in mm): with meat in shell
+5. Whole weight(in grams) of the whole abalone
+6. Shucked weight( in grams) which is the weight in meat
+7. Viscera weight( in grams) which is the gut weight after bleeding out
+8. Shell weight( in grams) after being dried
+9. Rings(Integer) gives the age in year
+
+##What is the goal of this project?
+The main goal of this project Is to predict Age through physical measurements of the abalone
+through using the linear regression technique across different independant variables, assuming that the dependant variable is age. I want to see which independant variable has the most effect on Age.
+
+##What am I doing with this data?
+So the UCI machine learning website has this dataset which contains 4177 rows. For this project, I decided to cut down the data. So I am going to use the first 1500 rows instead of all 4177 rows. The reason I'm doing this is because of convenience and also I feel that more data doesn't have much impact on the regression equation or the calculations. 
+
+So for this data, I took it from UCI ML website, converted it into excel, then imported it into SQLITE prior to putting this into R for analysis. I also created the column names for this dataset. Here is the sql code:
+```{r}
+setwd("C:/Documents/My Excel")
+library(RSQLite)
+db<-dbConnect(SQLite(),dbname="Abalone.db")
+df<-dbGetQuery(db,'SELECT * from Abalone LIMIT 1500 ')
+colnames(df)=c("sex","length","diameter","height","total.weight",
+                        "meat.weight","viscera.weight","shell.weight","age")
+head(df)
+tail(df)
+abalone=df
+
+```
+
+##Filtering and summarizing the data according to gender category
+So what I'm doing next is I'm going to try to filter out the data according to gender. I'm doing this because it's more organized. After calculating the regression for gender, I plan on doing it for the whole dataset
+```{r}
+male=dplyr::filter(abalone,sex=='M')
+female=dplyr::filter(abalone,sex=='F')
+infant=dplyr::filter(abalone,sex=='I')
+
+summary(male)
+summary(female)
+summary(infant)
+```
+
+##graphing count vs length
+```{r}
+library(ggplot2)
+library(cowplot)
+lm<-ggplot(male,aes(x=length))+geom_bar()
+lf<-ggplot(female,aes(x=length))+geom_bar()
+li<-ggplot(infant,aes(x=length))+geom_bar()
+lt<-ggplot(abalone,aes(x=length))+geom_bar()
+plot_grid(lm,lf,li,lt,labels="AUTO")
+```
+
+##Calculating total regression
+```{r}
+malemodel<-lm(age~length+diameter+height+total.weight+meat.weight+viscera.weight+shell.weight,data=male)
+summary(malemodel)
+femalemodel<-lm(age~length+diameter+height+total.weight+meat.weight+viscera.weight+shell.weight,data=female)
+summary(femalemodel)
+totalmodel<-lm(age~length+diameter+height+total.weight+meat.weight+viscera.weight+shell.weight,data=abalone)
+summary(totalmodel)
+```
+
+#seeing if there is a relationship b/t length of shell and age x=M,y=F,z=I,a=entire dataset
+```{r}
+x<-lm(age~length,data=male)
+summary(x)
+y<-lm(age~length,data=female)
+summary(y)
+z<-lm(age~length,data=infant)
+summary(z)
+a<-lm(age~length,data=abalone)
+summary(a)
+
+```
